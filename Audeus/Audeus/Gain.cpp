@@ -21,18 +21,28 @@ CGain::CGain()
 }
 
 
-void CGain::cal_gain(float **audio_in, float *loud_in, float *loud_ref, float *gain)
+void CGain::cal_gain(float *loud_in, float *loud_ref, float *gain)
 {
+	for (int i = 0; i < NUM_CHANNELS; i++)
+	{
+		gain[i] = loud_ref[i] - loud_in[i];
+		gain[i] = pow(10, gain[i] / 20);
+		cout << "Gain Level for channel " << i << " is: " << gain[i] << endl;
+	}
+
+	/*
 	while (true)
 	{
 		//Gain Calculation
 		for (int i = 0; i < NUM_CHANNELS; i++)
 		{
 			loudnessDifference[i] = loud_in[i] - loud_ref[i];
+
+
 			if (loudnessDifference[i] > -3 && loudnessDifference[i] < 3)
 			{
-				cout << "Gain Level is: " << gain[i] << endl;
-				cout << "Loudness Level is: " << loud_in[i] << endl;
+				cout << "Gain Level for channel 1 is: " << gain[0] << endl;
+				cout << "Gain Level for channel 2 is: " << gain[1] << endl;
 				return;
 			}
 
@@ -65,5 +75,5 @@ void CGain::cal_gain(float **audio_in, float *loud_in, float *loud_ref, float *g
 				Loud.compute_loudness(audio_in,loud_in);
 			}
 		}
-	}
+	}*/
 }

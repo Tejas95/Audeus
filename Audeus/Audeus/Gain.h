@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include <iostream>
-#include"Definitions.h"
+#include "Definitions.h"
 #include "Loudness.h"
 
 using namespace std;
@@ -24,7 +24,7 @@ public:
 
 	CGain();
 
-	void cal_gain(float **audioInput, float *loud_in, float *loud_ref, float *gain);
+	void cal_gain(float *loud_in, float *loud_ref, float *gain);
 
 private:
 	CLoudness Loud;

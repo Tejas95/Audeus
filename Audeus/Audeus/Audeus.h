@@ -1,10 +1,14 @@
 #pragma once
 
+#define NOMINMAX
+
 #include <stdio.h>
 #include <math.h>
 #include <portaudio.h>
+#include <algorithm>
 #include "Loudness.h"
 #include "Gain.h"
+#include "GainRamping.h"
 #include "Definitions.h"
 #include <iostream>
 #include <string>
@@ -21,6 +25,7 @@ public:
 	void calculateAverage(float **input, float *output, int numberOfNoiseValues);
 
 	CGain Cgain;
+	CGainRamping CgainRamping;
 	CLoudness Cloud;
 
 	int LoudnessMode;
@@ -30,9 +35,10 @@ public:
 
 	float **output;
 	float **input;
-	float **inputBufferForGain;
+	//float **inputBufferForGain;
 	float *gain1;
 	float *gain;
+	float* adaptiveEndGain;
 	float *loud_I;
 	float *loud_O;
 
@@ -43,6 +49,8 @@ public:
 
 	float **noiseLoudnessLevelsBuffer;
 	float *noiseLoudnessLevelBufferAvg;
+	float *noiseLoudnessLevelBufferMax;
+	float* noiseArray;
 	float **inputLoudnessLevelsBuffer;
 	float *inputLoudnessLevelBufferAvg;
 	
@@ -51,7 +59,7 @@ public:
 	int numberOfGainValues;
 
 	float *loudnessReferenceValues;
-	float *loudnessCustomValues;
+	float *loudnessValues;
 
 	string noiseLoudnessLevelStart;
 	string noiseLoudnessLevelIsDone;
@@ -59,4 +67,6 @@ public:
 	string inputLoudnessLevelIsDone;
 	string gainLevelStart;
 	string gainLevelIsDone;
+
+	int channelTemp;
 };
