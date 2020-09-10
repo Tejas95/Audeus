@@ -39,8 +39,10 @@ public:
 	float *gain1;
 	float *gain;
 	float* adaptiveEndGain;
+	float* increment;
 	float *loud_I;
 	float *loud_O;
+	float* loud_output;
 
 	int BlocksizeTemp;
 	int noiseLoudnessLevelTemp;
@@ -67,6 +69,8 @@ public:
 	string inputLoudnessLevelIsDone;
 	string gainLevelStart;
 	string gainLevelIsDone;
+	string adaptiveGainLevelStart;
+	string adaptiveGainLevelIsDone;
 
 	int channelTemp;
 };

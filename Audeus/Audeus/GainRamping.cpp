@@ -26,7 +26,5 @@ void CGainRamping::cal_gainRamping(const float** in, float** out, float* startGa
 			out[ch][sample] = in[ch][sample] * startGain[ch];
 			startGain[ch] += increment[ch];
 		}
-		
-		
 	}
 }
