@@ -39,7 +39,8 @@ public:
 	float *gain1;
 	float *gain;
 	float* adaptiveEndGain;
-	float* increment;
+	float* adaptiveGainLevel;
+	float* gainPrev;
 	float *loud_I;
 	float *loud_O;
 	float* loud_output;

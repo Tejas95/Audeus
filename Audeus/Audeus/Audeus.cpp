@@ -65,8 +65,11 @@ CAudeus::CAudeus()
 
 	gain = new float[NUM_CHANNELS];
 	adaptiveEndGain = new float[NUM_CHANNELS];
-	increment = new float[NUM_CHANNELS];
-
+	adaptiveGainLevel = new float[NUM_CHANNELS];
+	gainPrev = new float[NUM_CHANNELS];
+	memset(adaptiveEndGain, 0, sizeof(float) * NUM_CHANNELS);
+	memset(gainPrev, 0, sizeof(float) * NUM_CHANNELS);
+	
 	loud_I = new float[NUM_CHANNELS];
 	loud_O = new float[NUM_CHANNELS];
 	memset(loud_I, 0, sizeof(float) * NUM_CHANNELS);
@@ -81,8 +84,7 @@ CAudeus::CAudeus()
 	memset(noiseLoudnessLevelBufferAvg, 0, sizeof(float) * NUM_CHANNELS);
 	memset(noiseLoudnessLevelBufferMax, 0, sizeof(float) * NUM_CHANNELS);
 	memset(inputLoudnessLevelBufferAvg, 0, sizeof(float) * NUM_CHANNELS);
-	memset(increment, 0, sizeof(float) * NUM_CHANNELS);
-
+	
 	numberOfNoiseLoudnessValues = 10;
 	numberOfInputLoudnessValues = 10;
 	numberOfGainValues = 10;
@@ -93,8 +95,8 @@ CAudeus::CAudeus()
 	inputLoudnessLevelIsDone = "NO";
 	gainLevelStart = "NO";
 	gainLevelIsDone = "NO";
-	adaptiveGainLevelStart = "YES";
-	adaptiveGainLevelIsDone = "YES";
+	adaptiveGainLevelStart = "NO";
+	adaptiveGainLevelIsDone = "NO";
 
 	loudnessReferenceValues = new float[NUM_CHANNELS];
 	loudnessValues = new float[NUM_CHANNELS];
@@ -114,6 +116,7 @@ CAudeus::CAudeus()
 
 		loudnessReferenceValues[i] = -30;
 		gain[i] = 1;
+		adaptiveGainLevel[i] = 1;
 	}
 }
 
@@ -152,6 +155,7 @@ static int AudioCallback(const void *inputBuffer, void *outputBuffer,
 
 	CAudeus* AUD = (CAudeus*)userData;
 	
+	int a = 0.3;
 
 	for (i = 0; i < NUM_CHANNELS; i++)
 	{
@@ -175,24 +179,35 @@ static int AudioCallback(const void *inputBuffer, void *outputBuffer,
 					if (AUD->BlocksizeTemp == AUD->numBlocks)
 					{
 						AUD->Cloud.compute_loudness(AUD->output, AUD->loud_O);
-
-						if (AUD->loud_O[i] > AUD->loudnessReferenceValues[i] + 25)
+						
+						if (AUD->loud_O[i] > AUD->loudnessReferenceValues[i] + 10)
 						{
 							AUD->adaptiveEndGain[i] = pow(10, (AUD->loudnessReferenceValues[i] - AUD->loud_O[i]) / 20);
-							AUD->increment[i] = (AUD->adaptiveEndGain[i] - AUD->gain[i]) / (FRAMES_PER_BUFFER);
-
+							AUD->adaptiveGainLevelStart = "YES";
 							AUD->adaptiveGainLevelIsDone = "NO";
+							cout << "boo" << endl;
 						}
+
+						if (AUD->adaptiveGainLevelStart == "YES")
+						{
+							if (AUD->adaptiveGainLevelIsDone == "NO")
+							{
+								//AUD->gainPrev[i] = AUD->adaptiveGainLevel[i];
+								AUD->adaptiveGainLevel[i] = a * AUD->gain[i] + (1 - a) * AUD->adaptiveEndGain[i];
+								AUD->gain[i] = AUD->adaptiveGainLevel[i];
+
+								if (AUD->adaptiveGainLevel[i] == AUD->adaptiveEndGain[i])
+									AUD->adaptiveGainLevelIsDone == "YES";
+
+								cout << AUD->gain[i] << endl;
+							}
+						}
+
+						AUD->BlocksizeTemp = 0;
 					}
 				}
 
-				if (AUD->adaptiveGainLevelIsDone.compare("NO") == 0)
-
-					if (AUD->gain[i] != AUD->adaptiveEndGain[i])
-						AUD->gain[i] = AUD->gain[i] - AUD->increment[i];
-					else
-						AUD->adaptiveGainLevelIsDone = "YES";
-
+				
 				out[i][j] = AUD->gain[i] * in[i][j];
 			}
 		}
@@ -298,29 +313,6 @@ static int AudioCallback(const void *inputBuffer, void *outputBuffer,
 		if (AUD->gainLevelStart.compare("YES") == 0)
 		{
 			memcpy(AUD->loudnessValues, AUD->loudnessReferenceValues, sizeof(float) * NUM_CHANNELS);
-			/*
-			printf("Please choose a loudness mode. Select '1' to set all channels to the same loudness and select '2' to manually set the loudness values as desired \n");
-
-			
-			cin >> AUD->LoudnessMode;
-
-			switch (AUD->LoudnessMode)
-			{
-			case(1):
-				memcpy(AUD->LoudnessValues, AUD->loudnessReferenceValues, sizeof(float) * NUM_CHANNELS);
-				break;
-			case(2):
-				for (int channel = 0; channel < NUM_CHANNELS; channel++)
-				{
-					cout << "Enter loudness value for Channel " << channel << endl;
-					cin >> AUD->LoudnessValues[channel];
-				}
-				break;
-			default:
-				memcpy(AUD->LoudnessValues, AUD->loudnessReferenceValues, sizeof(float) * NUM_CHANNELS);
-				break;
-			}
-			*/
 		
 			if (AUD->gainLevelIsDone.compare("NO") == 0)
 			{
@@ -330,28 +322,10 @@ static int AudioCallback(const void *inputBuffer, void *outputBuffer,
 			}
 		}
 
-
-		//This section will now do adaptive gain changes. If loudness of a channel exceeds the loudness level set for that channel, then gradually
-		//bring it back to the set level
-		/*
-		for (int ch = 0; ch < NUM_CHANNELS; ch++)
-		{
-		 	AUD->Cloud.compute_loudness(AUD->output, AUD->loud_I);
-
-		 	if (AUD->loud_I[ch] > AUD->loudnessReferenceValues[ch] + 15)
-		 	{
-				
-		 		AUD->adaptiveEndGain[ch] = AUD->loudnessReferenceValues[ch] - AUD->loud_I[ch];
-
-		 		//Apply Gain Ramping
-		 		AUD->CgainRamping.cal_gainRamping(in, out, AUD->gain, AUD->adaptiveEndGain);
-					
-		 		cout << AUD->gain[ch] << endl;
-		 	}
-		}
-		*/
-		AUD->BlocksizeTemp = 0;
+		if (AUD->gainLevelIsDone == "NO")
+			AUD->BlocksizeTemp = 0;
 	}
+	
 	
 	return paContinue;
 }
